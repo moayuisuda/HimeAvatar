@@ -1,42 +1,27 @@
-import { useEffect, useState } from "react";
-import { isPromise } from "@/utils/utils";
+import { api } from "@/service/api";
+import { useState } from "react";
 
-export const useAsync = <T>(
-  promiseOrPromiseFactor: ((args: any) => Promise<T>) | Promise<T>
+export const useAsync = <T, Args extends any[]>(
+  promiseFactor: (...args: Args) => Promise<T>
 ) => {
-  const [error, setError] = useState();
+  const [error, setError] = useState<{ message: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>();
 
   let excute;
-  if (!isPromise(promiseOrPromiseFactor)) {
-    excute = (...args: any[]) => {
-      setLoading(true);
+  excute = (...excuteArgs: Args) => {
+    setLoading(true);
 
-      return (promiseOrPromiseFactor as (args: any) => Promise<T>)(args)
-        .then((response) => {
-          setError(undefined);
-          return response;
-        })
-        .catch((error) => {
-          setError(error);
-          return Promise.reject(error);
-        })
-        .finally(() => setLoading(false));
-    };
-  }
+    return promiseFactor(...excuteArgs)
+      .then((response) => {
+        setError(null);
+        return response;
+      })
+      .catch((error) => {
+        setError(error);
+        return Promise.reject(error);
+      })
+      .finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    if (isPromise(promiseOrPromiseFactor)) {
-      setLoading(true);
-      (promiseOrPromiseFactor as Promise<T>)
-        .then((res) => {
-          setData(res);
-        })
-        .catch((err) => setError(err))
-        .finally(() => setLoading(false));
-    }
-  }, []);
-
-  return { loading, error, excute, data };
+  return { loading, error, excute };
 };

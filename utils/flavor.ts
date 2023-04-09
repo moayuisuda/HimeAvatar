@@ -18,5 +18,5 @@ export const getCurrCountry = async () => {
     "https://api.ipregistry.co?key=9ajefttienckqvl3"
   );
 
-  return localeInfo.data.location.country.name;
+  return localeInfo.data.location.country.name as string;
 };

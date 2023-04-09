@@ -9,7 +9,8 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res.data,
   (err) => {
-    console.error(JSON.stringify(err));
+    // error will wrapped by axios
+    return Promise.reject(err);
   }
 );
 

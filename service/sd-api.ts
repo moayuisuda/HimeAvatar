@@ -9,7 +9,7 @@ const sdApi = axios.create({
 sdApi.interceptors.response.use(
   (res) => res,
   (err) => {
-    alert(JSON.stringify(err));
+    return Promise.reject(err);
   }
 );
 

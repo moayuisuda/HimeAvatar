@@ -4,10 +4,10 @@ import { TIME } from "@/typings/time";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sdApi } from "@/service/sd-api";
 
-type ImgResData = Data<{
-  urls: string;
+export type ImgResData = {
+  urls: { seed: string; url: string }[];
   info: string;
-}>;
+};
 
 export const isDay = (time: TIME) => {
   return time === TIME.MORNING || time === TIME.NOON;
@@ -17,8 +17,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ImgResData>
 ) {
-  const params = req.query;
-  console.log(params);
   const imgRes = await sdApi.post("/controlnet/txt2img", {
     prompt: `masterpiece, portrait, ${req.body.time}, flower, ${
       req.body.country ? `${req.body.country}, ` : ""
@@ -32,13 +30,10 @@ export default async function handler(
   const info = JSON.parse(imgRes.data.info);
 
   res.status(200).json({
-    data: {
-      urls: imgRes.data.images.map((imgData: string, index: number) => ({
-        seed: info.all_seeds[index],
-        url: "data:image/png;base64," + imgData,
-      })),
-      info: imgRes.data.info,
-    },
-    code: 200,
+    urls: imgRes.data.images.map((imgData: string, index: number) => ({
+      seed: info.all_seeds[index],
+      url: "data:image/png;base64," + imgData,
+    })),
+    info: imgRes.data.info,
   });
 }

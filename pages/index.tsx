@@ -3,7 +3,7 @@ import { observable, action, makeObservable } from "mobx";
 import { useStore } from "@/hooks/useStore";
 import { observer } from "mobx-react-lite";
 import { Button } from "@/components/Button";
-import { useRequest } from "@/hooks/useRequest";
+import { useServiceFactory } from "@/hooks/useServiceFactory";
 import { getCurrCountry, getCurrTime } from "@/utils/flavor";
 import { useAsync } from "@/hooks/useAsync";
 import { ConnectButton } from "@web3uikit/web3";
@@ -11,6 +11,7 @@ import { BigNumber, ethers, ContractTransaction } from "ethers";
 import { useNotification } from "@web3uikit/core";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { MintedList } from "@/components/MintedList";
+import { ImgResData } from "./api/get-img";
 
 type Images = { urls: { seed: string; url: string }[]; info: string };
 
@@ -55,7 +56,7 @@ export default observer(() => {
     loading: imgFetching,
     error,
     excute: imgFetchExcute,
-  } = useRequest("get-img");
+  } = useServiceFactory<ImgResData>("get-img");
   const { loading: countryFetching, excute: countryFetchExcute } =
     useAsync(getCurrCountry);
 
@@ -88,8 +89,6 @@ export default observer(() => {
 
   const loading = imgFetching || countryFetching;
 
-  console.log({ account });
-
   return (
     <>
       <Head>
@@ -105,6 +104,7 @@ export default observer(() => {
           <ConnectButton />
         </header>
         <MintedList />
+        chain: {chainId}
         <hr className="w-full m-8" />
         <div className="flex items-center gap-2 flex-col">
           <div className="flex gap-1">
@@ -121,18 +121,7 @@ export default observer(() => {
             <div>
               <Button
                 className="text-xl w-56 mr-2"
-                onClick={async () => {
-                  const country = await countryFetchExcute();
-                  const data = await imgFetchExcute({
-                    method: "post",
-                    data: {
-                      time: getCurrTime(),
-                      mononoke: store.mononoke,
-                      country,
-                    },
-                  });
-                  store.setImg(data);
-                }}
+                onClick={async () => {}}
                 disabled={loading || !account || !store.selectedSeed}
               >
                 {loading ? "Minting..." : "Mint"}
@@ -149,6 +138,7 @@ export default observer(() => {
               className="text-xl w-56"
               onClick={async () => {
                 const country = await countryFetchExcute();
+
                 const data = await imgFetchExcute({
                   method: "post",
                   data: {
@@ -157,6 +147,7 @@ export default observer(() => {
                     country,
                   },
                 });
+
                 store.setImg(data);
               }}
               disabled={loading || !account}
@@ -174,21 +165,18 @@ export default observer(() => {
         )}
         <div className="flex gap-2 flex-wrap justify-center">
           {imgs.urls.map((urlInfo) => (
-            <>
-              <img
-                onClick={() => store.setselectedSeed(urlInfo.url)}
-                className={
-                  (store.selectedSeed === urlInfo.url
-                    ? "outline-blue-500 outline-4 outline "
-                    : "") + "cursor-pointer"
-                }
-                width={300}
-                key={urlInfo.seed}
-                src={urlInfo.url}
-                alt="result"
-              />
-              <label htmlFor="">{urlInfo.seed}</label>
-            </>
+            <img
+              onClick={() => store.setselectedSeed(urlInfo.url)}
+              className={
+                (store.selectedSeed === urlInfo.url
+                  ? "outline-blue-500 outline-4 outline "
+                  : "") + "cursor-pointer"
+              }
+              width={300}
+              key={urlInfo.seed}
+              src={urlInfo.url}
+              alt="result"
+            />
           ))}
         </div>
         {error && (
