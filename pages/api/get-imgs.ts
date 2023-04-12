@@ -1,11 +1,10 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { Data } from "@/typings/api";
 import { TIME } from "@/typings/time";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sdApi } from "@/service/sd-api";
 
 export type ImgResData = {
-  urls: { seed: string; url: string }[];
+  imgs: { seed: string; url: string }[];
   info: string;
 };
 
@@ -30,7 +29,7 @@ export default async function handler(
   const info = JSON.parse(imgRes.data.info);
 
   res.status(200).json({
-    urls: imgRes.data.images.map((imgData: string, index: number) => ({
+    imgs: imgRes.data.images.map((imgData: string, index: number) => ({
       seed: info.all_seeds[index],
       url: "data:image/png;base64," + imgData,
     })),

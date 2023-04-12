@@ -1,9 +1,9 @@
 import Head from "next/head";
-import { observable, action, makeObservable } from "mobx";
+import { observable, action, makeObservable, computed } from "mobx";
 import { useStore } from "@/hooks/useStore";
 import { observer } from "mobx-react-lite";
 import { Button } from "@/components/Button";
-import { useServiceFactory } from "@/hooks/useServiceFactory";
+import { useService } from "@/hooks/useService";
 import { getCurrCountry, getCurrTime } from "@/utils/flavor";
 import { useAsync } from "@/hooks/useAsync";
 import { ConnectButton } from "@web3uikit/web3";
@@ -11,22 +11,29 @@ import { BigNumber, ethers, ContractTransaction } from "ethers";
 import { useNotification } from "@web3uikit/core";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { MintedList } from "@/components/MintedList";
-import { ImgResData } from "./api/get-img";
+import { ImgResData } from "./api/get-imgs";
+import { dataURLtoFile } from "@/utils/utils";
+import { api } from "@/service/api";
+import { NFTStorage } from "nft.storage";
 
-type Images = { urls: { seed: string; url: string }[]; info: string };
+type Image = { seed: string; url: string };
 
 class HomeStore {
   constructor() {
     makeObservable(this);
   }
 
-  @observable imgs: Images = {
-    urls: [],
-    info: "",
-  };
+  @observable imgs: Image[] = [];
+  @observable info = "";
   @observable selectedSeed = "";
-
   @observable mononoke: boolean = false;
+
+  @computed
+  get currImg() {
+    return this.imgs.find(
+      (urlInfo) => urlInfo.seed === this.selectedSeed
+    ) as Image;
+  }
 
   @action setMononoke = (value: boolean) => {
     this.mononoke = value;
@@ -34,15 +41,34 @@ class HomeStore {
   @action setselectedSeed = (url: string) => {
     this.selectedSeed = url;
   };
-  @action setImg = async (imgs: Images) => {
+  @action setImageAndInfo = async (imgs: Image[], info: string) => {
     this.imgs = imgs;
+    this.info = info;
   };
   @action clear = async () => {
-    this.imgs = {
-      urls: [],
-      info: "",
-    };
+    this.imgs = [];
+    this.info = "";
     this.selectedSeed = "";
+  };
+  mint = async (owner: string) => {
+    const file = dataURLtoFile(this.currImg.url, "avatar.");
+    const API_KEY = process.env.NEXT_PUBLIC_NFT_STORAGE_API_KEY as string;
+    const nftId = 0;
+
+    const nft = {
+      image: file, // use image Blob as `image` field
+      name: "Hime Avatar",
+      description: "Hime Avatar Meta",
+      properties: {
+        owner,
+        id: nftId,
+      },
+    };
+
+    const client = new NFTStorage({ token: API_KEY });
+    const metadata = await client.store(nft);
+
+    return metadata.url;
   };
 }
 
@@ -56,7 +82,9 @@ export default observer(() => {
     loading: imgFetching,
     error,
     excute: imgFetchExcute,
-  } = useServiceFactory<ImgResData>("get-img");
+  } = useService<ImgResData>("get-imgs");
+
+  const { loading: minting, excute: mint, result } = useAsync(store.mint);
   const { loading: countryFetching, excute: countryFetchExcute } =
     useAsync(getCurrCountry);
 
@@ -117,14 +145,17 @@ export default observer(() => {
             />
             <label htmlFor="">Mononoke</label>
           </div>
-          {store.imgs.urls.length > 0 ? (
+          {store.imgs.length > 0 ? (
             <div>
               <Button
                 className="text-xl w-56 mr-2"
-                onClick={async () => {}}
-                disabled={loading || !account || !store.selectedSeed}
+                onClick={async () => {
+                  const metaUrl = await mint(account as string);
+                  console.log({ metaUrl });
+                }}
+                disabled={minting || !account || !store.selectedSeed}
               >
-                {loading ? "Minting..." : "Mint"}
+                {minting ? "Minting..." : "Mint"}
               </Button>
               <Button
                 className="text-xl w-20 bg-red-500 hover:bg-red-600"
@@ -148,27 +179,27 @@ export default observer(() => {
                   },
                 });
 
-                store.setImg(data);
+                store.setImageAndInfo(data.imgs, data.info);
               }}
               disabled={loading || !account}
             >
-              {loading ? "Fetching..." : "Make a wish"}
+              {loading ? "Wishing..." : "Make a wish"}
             </Button>
           )}
         </div>
         <hr className="w-full m-8" />
-        {store.imgs.urls.length > 1 && !store.selectedSeed && (
+        {store.imgs.length > 1 && !store.selectedSeed && (
           <p className="mb-4 text-center">
             &quot; Mononoke Kami answered your wish, now you can choose one to
             mint to blockchain &quot;
           </p>
         )}
         <div className="flex gap-2 flex-wrap justify-center">
-          {imgs.urls.map((urlInfo) => (
+          {imgs.map((urlInfo) => (
             <img
-              onClick={() => store.setselectedSeed(urlInfo.url)}
+              onClick={() => store.setselectedSeed(urlInfo.seed)}
               className={
-                (store.selectedSeed === urlInfo.url
+                (store.selectedSeed === urlInfo.seed
                   ? "outline-blue-500 outline-4 outline "
                   : "") + "cursor-pointer"
               }
@@ -185,7 +216,7 @@ export default observer(() => {
             <p className="text-red-500">{error.message}</p>
           </>
         )}
-        <p>{imgs.info}</p>
+        <p>{store.info}</p>
       </main>
     </>
   );
