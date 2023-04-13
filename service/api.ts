@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const baseUrl = "api";
+const baseUrl = "api";
 
 const api = axios.create({
   baseURL: baseUrl,
