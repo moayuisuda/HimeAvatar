@@ -1,17 +1,15 @@
 import { api } from "@/service/api";
+import { useRequest } from "ahooks";
 import { useMoralis } from "react-moralis";
-import useSWR from "swr";
 
 export const MintedList = () => {
   const { account } = useMoralis();
 
-  const { data: listData, isLoading } = useSWR<
-    Array<{ seed: string; url: string }>
-  >("get-owned-seed", api);
+  const { data: listData, loading } = useRequest(() => api.get("get-owned-seed"));
 
   return (
     <div className="flex gap-2 flex-wrap justify-center">
-      {isLoading && "loading..."}
+      {loading && "loading..."}
       {listData &&
         listData.map((item) => (
           <div key={item.seed}>
