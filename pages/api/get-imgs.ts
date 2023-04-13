@@ -27,13 +27,13 @@ export default async function handler(
     sampler_name: "DPM++ SDE",
   });
 
-  const info = JSON.parse(imgRes.data.info);
+  const info = JSON.parse(imgRes.info);
 
   res.status(200).json({
-    imgs: imgRes.data.images.map((imgData: string, index: number) => ({
+    imgs: imgRes.images.map((imgData: string, index: number) => ({
       seed: info.all_seeds[index],
       url: "data:image/png;base64," + imgData,
     })),
-    info: imgRes.data.info,
+    info: imgRes.info,
   });
 }

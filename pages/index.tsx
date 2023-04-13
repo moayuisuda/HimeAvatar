@@ -12,6 +12,7 @@ import { api } from "@/service/api";
 import { NFTStorage } from "nft.storage";
 import { NextPageWithLayout } from "./_app";
 import { RootLayout } from "./_layout";
+import { useRequest } from "ahooks";
 
 type Image = { seed: string; url: string };
 
@@ -78,11 +79,15 @@ const Home: NextPageWithLayout = observer((props) => {
   const {
     loading: imgFetching,
     error,
-    excute: imgFetchExcute,
-  } = useService<ImgResData>("get-imgs");
-  const { loading: minting, excute: mint, result } = useAsync(store.mint);
-  const { loading: countryFetching, excute: countryFetchExcute } =
-    useAsync(getCurrCountry);
+    runAsync: imgFetchExcute,
+  } = useService<ImgResData>("get-imgs", { manual: true });
+  const { loading: minting, runAsync: mint } = useRequest(store.mint, {
+    manual: true,
+  });
+  const { loading: countryFetching, runAsync: countryFetchExcute } = useRequest(
+    getCurrCountry,
+    { manual: true }
+  );
 
   const notify = useNotification();
   const onTxSuccess = async (tx: ContractTransaction) => {
