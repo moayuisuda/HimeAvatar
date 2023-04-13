@@ -1,11 +1,14 @@
 import { api } from "@/service/api";
 import { useRequest } from "ahooks";
 import { useMoralis } from "react-moralis";
+import { Img } from "@/typings";
 
 export const MintedList = () => {
   const { account } = useMoralis();
 
-  const { data: listData, loading } = useRequest(() => api.get("get-owned-seed"));
+  const { data: listData, loading } = useRequest<Img[], []>(() =>
+    api.get("get-owned-seed")
+  );
 
   return (
     <div className="flex gap-2 flex-wrap justify-center">

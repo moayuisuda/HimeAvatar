@@ -16,7 +16,7 @@ export default async function handler(
 
   res.status(200).json([
     {
-      seed: "seed",
+      seed: "1",
       url: "https://pics2.baidu.com/feed/f11f3a292df5e0fee8d1ce15392d64a25fdf72b4.jpeg@f_auto?token=6bd203f404942bc222ca5d66f8c185f5",
     },
   ]);

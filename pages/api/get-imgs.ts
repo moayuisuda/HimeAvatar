@@ -2,9 +2,10 @@
 import { TIME } from "@/typings/time";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sdApi } from "@/service/sd-api";
+import { Img } from "@/typings";
 
 export type ImgResData = {
-  imgs: { seed: string; url: string }[];
+  imgs: Img[];
   info: string;
 };
 
