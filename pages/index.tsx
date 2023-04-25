@@ -1,18 +1,27 @@
 import { observable, action, makeObservable, computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Button, MintedList } from "@/components";
+import { Button, Options } from "@/components";
 import { useService, useAsync, useStore } from "@/hooks";
 import { dataURLtoFile, getCurrCountry, getCurrTime } from "@/utils";
-import { ConnectButton } from "@web3uikit/web3";
 import { BigNumber, ethers, ContractTransaction } from "ethers";
 import { useNotification } from "@web3uikit/core";
-import { useMoralis, useWeb3Contract } from "react-moralis";
+import {
+  Web3ExecuteFunctionParameters,
+  useMoralis,
+  useWeb3Contract,
+} from "react-moralis";
 import { ImgResData } from "./api/get-imgs";
-import { api } from "@/service/api";
 import { NFTStorage } from "nft.storage";
 import { NextPageWithLayout } from "./_app";
 import { RootLayout } from "./_layout";
 import { useRequest } from "ahooks";
+import abi from "@/web3-interface/abi.json";
+import address from "@/web3-interface/address.json";
+import { useEffect } from "react";
+import { ResolveCallOptions } from "react-moralis/lib/hooks/internal/_useResolveAsyncCall";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { api } from "@/service";
 
 type Image = { seed: string; url: string };
 
@@ -20,6 +29,12 @@ class HomeStore {
   constructor() {
     makeObservable(this);
   }
+
+  web3Fn:
+    | ((
+        args: ResolveCallOptions<any, Web3ExecuteFunctionParameters>
+      ) => Promise<any>)
+    | undefined = undefined;
 
   @observable imgs: Image[] = [];
   @observable info = "";
@@ -49,24 +64,66 @@ class HomeStore {
     this.selectedSeed = "";
   };
   mint = async (owner: string) => {
-    const file = dataURLtoFile(this.currImg.url, "avatar.");
-    const API_KEY = process.env.NEXT_PUBLIC_NFT_STORAGE_API_KEY as string;
-    const nftId = 0;
+    // const file = dataURLtoFile(this.currImg.url, "avatar");
+    // const API_KEY = process.env.NEXT_PUBLIC_NFT_STORAGE_API_KEY as string;
+    // const nftId = 0;
 
-    const nft = {
-      image: file, // use image Blob as `image` field
-      name: "Hime Avatar",
-      description: "Hime Avatar Meta",
-      properties: {
-        owner,
-        id: nftId,
+    // const nft = {
+    //   image: file, // use image Blob as `image` field
+    //   name: "Hime Avatar",
+    //   description: "Hime Avatar Meta",
+    //   properties: {
+    //     owner,
+    //     id: nftId,
+    //   },
+    // };
+
+    // const client = new NFTStorage({ token: API_KEY });
+    // const metadata = await client.store(nft);
+
+    // const res = await this.web3Fn.mintNft(metadata.url);
+
+    const executor = this.web3Fn as (
+      args: ResolveCallOptions<any, Web3ExecuteFunctionParameters>
+    ) => Promise<any>;
+
+    const mintInfo = await new Promise<{ tokenId: string; txHash: string }>(
+      (res, rej) => {
+        executor({
+          params: {
+            functionName: "mintNft",
+            params: { tokenURI: "TOKENURL" },
+          },
+          onSuccess: async (tx: ContractTransaction) => {
+            const receipt = await tx.wait(1);
+            const tokenId = receipt.events?.[0]?.args?.tokenId.toNumber();
+            console.log({ receipt, tx });
+            res({ tokenId, txHash: receipt.transactionHash });
+          },
+          onError: (err: any) => {
+            rej(err);
+          },
+        });
+      }
+    );
+
+    return mintInfo;
+  };
+
+  getImgs = async () => {
+    const country = await getCurrCountry();
+
+    const data = await api.request({
+      url: "/get-imgs",
+      method: "post",
+      data: {
+        time: getCurrTime(),
+        mononoke: this.mononoke,
+        country,
       },
-    };
+    });
 
-    const client = new NFTStorage({ token: API_KEY });
-    const metadata = await client.store(nft);
-
-    return metadata.url;
+    this.setImageAndInfo(data.imgs, data.info);
   };
 }
 
@@ -75,21 +132,30 @@ const Home: NextPageWithLayout = observer((props) => {
   const { imgs } = store;
   const { chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex as string).toString();
+  const { runContractFunction } = useWeb3Contract({
+    abi,
+    contractAddress: address[chainId as keyof typeof address],
+  });
 
   const {
-    loading: imgFetching,
-    error,
-    runAsync: imgFetchExcute,
-  } = useService<ImgResData>("get-imgs", { manual: true });
-  const { loading: minting, runAsync: mint } = useRequest(store.mint, {
+    loading: minting,
+    runAsync: mint,
+    error: mintError,
+  } = useRequest(store.mint, {
     manual: true,
   });
-  const { loading: countryFetching, runAsync: countryFetchExcute } = useRequest(
-    getCurrCountry,
-    { manual: true }
-  );
-
+  const {
+    loading: getImgsLoading,
+    runAsync: getImgs,
+    error: getImgsError,
+  } = useRequest(store.getImgs, {
+    manual: true,
+  });
+  const router = useRouter();
   const notify = useNotification();
+
+  const error = getImgsError || mintError;
+
   const onTxSuccess = async (tx: ContractTransaction) => {
     await tx.wait(1);
     notify({
@@ -103,24 +169,13 @@ const Home: NextPageWithLayout = observer((props) => {
 
   const refreshLotteryState = async () => {};
 
-  // const useWeb3Fn = (functionName: string, msgValue?: string, params = {}) => {
-  //   const { runContractFunction, ...others } = useWeb3Contract({
-  //     abi,
-  //     contractAddress,
-  //     functionName,
-  //     params,
-  //     msgValue,
-  //   });
-
-  //   return { fn: runContractFunction, ...others };
-  // };
-  // const { fn: getRecentWinner } = useWeb3Fn("s_recentWinner");
-
-  const loading = imgFetching || countryFetching;
+  useEffect(() => {
+    store.web3Fn = runContractFunction;
+  }, [runContractFunction]);
 
   return (
     <div className="flex justify-center items-center flex-col">
-      <MintedList />
+      <Options />
       chain: {chainId}
       <hr className="w-full m-8" />
       <div className="flex items-center gap-2 flex-col">
@@ -139,8 +194,13 @@ const Home: NextPageWithLayout = observer((props) => {
             <Button
               className="text-xl w-56 mr-2"
               onClick={async () => {
-                const metaUrl = await mint(account as string);
-                console.log({ metaUrl });
+                const mintInfo = await mint(account as string);
+                router.push({
+                  pathname: "/success/" + mintInfo.tokenId,
+                  query: {
+                    "tx-hash": mintInfo.txHash,
+                  },
+                });
               }}
               disabled={minting || !account || !store.selectedSeed}
             >
@@ -157,22 +217,11 @@ const Home: NextPageWithLayout = observer((props) => {
           <Button
             className="text-xl w-56"
             onClick={async () => {
-              const country = await countryFetchExcute();
-
-              const data = await imgFetchExcute({
-                method: "post",
-                data: {
-                  time: getCurrTime(),
-                  mononoke: store.mononoke,
-                  country,
-                },
-              });
-
-              store.setImageAndInfo(data.imgs, data.info);
+              await getImgs();
             }}
-            disabled={loading || !account}
+            disabled={getImgsLoading || !account}
           >
-            {loading ? "Wishing..." : "Make a wish"}
+            {getImgsLoading ? "Wishing..." : "Make a wish"}
           </Button>
         )}
       </div>
