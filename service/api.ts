@@ -1,15 +1,15 @@
+import { message } from "antd";
 import axios from "axios";
 
-const baseUrl = "api";
-
 const api = axios.create({
-  baseURL: baseUrl,
+  baseURL: "api",
 });
 
 api.interceptors.response.use(
   (res) => res.data,
   (err) => {
     // error will wrapped by axios
+    message.error(err.message);
     return Promise.reject(err);
   }
 );

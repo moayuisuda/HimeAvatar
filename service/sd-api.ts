@@ -1,14 +1,14 @@
+import { message } from "antd";
 import axios from "axios";
 
-const baseUrl = "http://127.0.0.1:7860";
-
 const sdApi = axios.create({
-  baseURL: baseUrl,
+  baseURL: process.env.SD_API_BASE,
 });
 
 sdApi.interceptors.response.use(
   (res) => res.data,
   (err) => {
+    message.error(err.message);
     return Promise.reject(err);
   }
 );

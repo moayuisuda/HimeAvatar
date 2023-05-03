@@ -2,21 +2,82 @@ import { observer } from "mobx-react-lite";
 import { useRouter } from "next/router";
 import { RootLayout } from "../_layout";
 import { NextPageWithLayout } from "../_app";
-import { Button } from "@/components";
+import { Button, Alert, Tag, Space } from "antd";
+import { useRequest } from "ahooks";
+import { ipfsToHttp } from "@/utils";
+import { MetaData } from "@/typings";
+import { useState } from "react";
+import { mapPrompt } from "@/components";
+import { Img } from "@/components/Img";
+
+const CHAIN_SCAN_BASE = "https://polygonscan.com/tx";
 
 const Success: NextPageWithLayout = observer(() => {
   const { query, back } = useRouter();
-  console.log({ query });
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const { data: metaData } = useRequest(
+    () => {
+      const url = ipfsToHttp(query["uri"] as string);
+      return fetch(url).then((res) => res.json());
+    },
+    {
+      ready: !!query["uri"],
+    }
+  ) as { data: MetaData; loading: boolean };
+
   return (
-    <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-2">Mint Success!</h1>
-      <h1>tokenId: {query.id}</h1>
-      <div>
-        <a className="bold">transaction: </a>
-      </div>
-      <Button onClick={() => back()} className="mt-4 w-24">
-        Back
-      </Button>
+    <div className="flex flex-col items-center gap-2">
+      <Img
+        width={256}
+        height={256}
+        src={metaData && ipfsToHttp(metaData.image)}
+        alt=""
+      />
+
+      {metaData && (
+        <Space align="center">
+          <p>
+            &quot; Mononoke Kami gifted an feature{" "}
+            <Tag className="text-base m-0" color="#17b4ff">
+              {mapPrompt(metaData.properties.seed)}
+            </Tag>{" "}
+            &quot;
+          </p>
+        </Space>
+      )}
+
+      <Alert
+        className="break-all"
+        type="success"
+        message="Mint Success"
+        showIcon
+        description={
+          <div>
+            <div>ID: {query.id}</div>
+            <div>
+              Transaction:{" "}
+              <a
+                className="bold"
+                href={`${CHAIN_SCAN_BASE}/${query["tx-hash"]}`}
+                target="_blank"
+              >
+                {query["tx-hash"]}
+              </a>
+            </div>
+            <div>
+              URI:{" "}
+              <a className="bold" href={query["uri"] as string} target="_blank">
+                {query["uri"]}
+              </a>
+            </div>
+          </div>
+        }
+        action={
+          <Button type="primary" onClick={() => back()}>
+            Back
+          </Button>
+        }
+      />
     </div>
   );
 });

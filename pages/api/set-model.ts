@@ -16,10 +16,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const imgRes = await sdApi.post("/sdapi/v1/options", {
+  const data = await sdApi.post("/sdapi/v1/options", {
     sd_model_checkpoint: "moa-project.ckpt [2700c435]",
   });
-  console.log(imgRes.data);
 
-  res.status(200).json({});
+  res.status(200).json(data);
 }

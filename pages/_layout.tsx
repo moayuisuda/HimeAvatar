@@ -1,6 +1,7 @@
 import Head from "next/head";
-import { ConnectButton } from "@web3uikit/web3";
 import React from "react";
+import { Divider } from "antd";
+import { ConnectButton } from "@/components";
 
 export const RootLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -14,11 +15,21 @@ export const RootLayout: React.FC<{ children: React.ReactNode }> = ({
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="p-8">
-        <header className="flex flex-col md:flex-row justify-center items-center gap-2">
-          <h1 className="text-4xl font-bold">Hime Avatar ❀</h1>
+        <header className="flex flex-col md:flex-row justify-center items-center md:gap-2">
+          <h1
+            className="text-4xl font-bold"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, #ffafbd 0%, #17b4ff 100%)",
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            Hime Avatar ❀
+          </h1>
           <ConnectButton />
         </header>
-        <hr className="m-8" />
+        <Divider />
         <main>{children}</main>
       </div>
     </>

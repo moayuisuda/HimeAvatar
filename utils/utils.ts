@@ -32,3 +32,9 @@ export function dataURLtoFile(dataurl: string, filename: string) {
 
   return new File([u8arr], filename, { type: mime });
 }
+
+const IPFS_GATEWAY = "https://nftstorage.link/ipfs";
+export const ipfsToHttp = (ipfsStr: string) => {
+  const [, path] = ipfsStr.split("//") as unknown as [string, string];
+  return `${IPFS_GATEWAY}/${path}`;
+};
