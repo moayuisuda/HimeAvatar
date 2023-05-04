@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useRouter } from "next/router";
 import { RootLayout } from "../_layout";
 import { NextPageWithLayout } from "../_app";
@@ -11,7 +10,7 @@ import { Img } from "@/components/Img";
 
 const CHAIN_SCAN_BASE = "https://polygonscan.com/tx";
 
-const Success: NextPageWithLayout = observer(() => {
+const Success: NextPageWithLayout = () => {
   const { query, back } = useRouter();
   const { data: metaData } = useRequest(
     () => {
@@ -29,7 +28,6 @@ const Success: NextPageWithLayout = observer(() => {
         width={256}
         height={256}
         src={metaData && ipfsToHttp(metaData.image)}
-        alt=""
       />
 
       {metaData && (
@@ -78,7 +76,7 @@ const Success: NextPageWithLayout = observer(() => {
       />
     </div>
   );
-});
+};
 
 Success.getLayout = function getLayout(page: React.ReactNode) {
   return <RootLayout>{page}</RootLayout>;

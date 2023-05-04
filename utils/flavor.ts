@@ -1,5 +1,4 @@
 import { TIME } from "@/typings/time";
-import axios from "axios";
 
 export const getCurrTime = () => {
   const time = new Date().getHours();

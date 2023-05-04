@@ -3,11 +3,6 @@ import { sdApi } from "@/service/sd-api";
 import { TIME } from "@/typings/time";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-type ImgResData = {
-  urls: string;
-  info: string;
-};
-
 export const isDay = (time: TIME) => {
   return time === TIME.MORNING || time === TIME.NOON;
 };
