@@ -6,19 +6,6 @@ export const isPromise = (obj: any) => {
   }
 };
 
-export const upload = async (file: File) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  fetch("/api/hello", {
-    method: "post",
-    body: formData,
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      // doing something...
-    });
-};
-
 export function dataURLtoFile(dataurl: string, filename: string) {
   const arr = dataurl.split(","),
     mime = (arr[0].match(/:(.*?);/) as string[])[1],

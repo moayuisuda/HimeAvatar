@@ -12,11 +12,3 @@ export const getCurrTime = () => {
   if (time <= 20) return TIME.TWILIGHT;
   return TIME.NIGHT;
 };
-
-export const getCurrCountry = async () => {
-  const localeInfo = await axios.get(
-    "https://api.ipregistry.co?key=9ajefttienckqvl3"
-  );
-
-  return localeInfo.data.location.country.name as string;
-};

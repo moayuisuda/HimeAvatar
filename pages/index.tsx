@@ -1,47 +1,30 @@
 import { SUPPORT_CHAIN } from "@/constants";
 
-import { observer } from "mobx-react-lite";
 import { useMoralis } from "react-moralis";
-import { useRequest } from "ahooks";
-import { useHimeContract, useHimeStore } from "@/hooks";
-import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { RootLayout } from "./_layout";
 import { WishForm, Img } from "@/components";
 import { Alert, Button, Popconfirm, Space, Spin } from "antd";
-
 import { NextPageWithLayout } from "./_app";
+import { useController } from "./index.ctrl";
 
-const Home: NextPageWithLayout = observer((props) => {
-  const store = useHimeStore();
-  const { imgs } = store;
+const Home: NextPageWithLayout = () => {
+  const router = useRouter();
   const { chainId: chainIdHex, account } = useMoralis();
-  const { runContractFunction } = useHimeContract();
+  const { actions, services, states } = useController();
 
+  const { loading: minting, runAsync: mint, error: mintError } = services.mint;
   const {
-    loading: minting,
-    runAsync: mint,
-    error: mintError,
-  } = useRequest(store.mint, {
-    manual: true,
-  });
-  const {
-    loading: getImgsLoading,
+    loading: gettingImgs,
     runAsync: getImgs,
     error: getImgsError,
-  } = useRequest(store.getImgs, {
-    manual: true,
-  });
-  const router = useRouter();
+  } = actions.getImgs;
+  const { imgs } = states;
 
   const error = getImgsError || mintError;
-  useEffect(() => {
-    store.web3Fn = runContractFunction;
-  }, [runContractFunction]);
 
   return (
     <div className="flex justify-center items-center flex-col">
-      {/* chain: {chainId} */}
       {imgs.length > 0 ? (
         <div className="flex justify-center items-center flex-col gap-2">
           <p className="mb-4 text-center">
@@ -51,9 +34,9 @@ const Home: NextPageWithLayout = observer((props) => {
           <div className="flex gap-2 flex-wrap justify-center">
             {imgs.map((urlInfo) => (
               <Img
-                onClick={() => store.setselectedSeed(urlInfo.seed)}
+                onClick={() => actions.setSelectedSeed(urlInfo.seed)}
                 className={
-                  (store.selectedSeed === urlInfo.seed
+                  (states.selectedSeed === urlInfo.seed
                     ? "outline-primary outline-4 outline "
                     : "") + "cursor-pointer"
                 }
@@ -67,7 +50,7 @@ const Home: NextPageWithLayout = observer((props) => {
           <Space className="m-auto">
             <Popconfirm
               title="Sure to clear current results?"
-              onConfirm={store.clear}
+              onConfirm={actions.clear}
             >
               <Button danger className="ml-2">
                 Clear
@@ -79,7 +62,7 @@ const Home: NextPageWithLayout = observer((props) => {
               onClick={async () => {
                 const mintInfo = await mint(
                   account as string,
-                  store.selectedSeed
+                  states.selectedSeed
                 );
                 router.push({
                   pathname: "/success/" + mintInfo.tokenId,
@@ -93,7 +76,7 @@ const Home: NextPageWithLayout = observer((props) => {
                 minting ||
                 !account ||
                 !SUPPORT_CHAIN.includes(chainIdHex as string) ||
-                !store.selectedSeed
+                !states.selectedSeed
               }
             >
               {minting ? "Minting..." : "Mint"}
@@ -101,7 +84,7 @@ const Home: NextPageWithLayout = observer((props) => {
           </Space>
         </div>
       ) : (
-        <Spin spinning={getImgsLoading} tip="🙏 Wishing...">
+        <Spin spinning={gettingImgs} tip="🙏 Wishing...">
           <WishForm onSubmit={(wishInfo) => getImgs(wishInfo)} />
         </Spin>
       )}
@@ -113,10 +96,9 @@ const Home: NextPageWithLayout = observer((props) => {
           description={error.message}
         ></Alert>
       )}
-      {/* <p>{store.info}</p> */}
     </div>
   );
-});
+};
 
 Home.getLayout = function getLayout(page: React.ReactNode) {
   return <RootLayout>{page}</RootLayout>;

@@ -3,4 +3,3 @@ export * from "./useService";
 export * from "./useStore";
 export * from "./useHimeContract";
 export * from "./useOwnedSeeds";
-export * from './useHimeStore';

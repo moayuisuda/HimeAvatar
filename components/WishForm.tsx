@@ -9,7 +9,6 @@ export type WithInfo = {
   seed: number;
   features: string[];
 };
-
 const DEFAULT_PROMPT = ["flower"];
 const PROMPT_MAP = {
   0: "royal",
@@ -30,6 +29,7 @@ export const WishForm: React.FC<{ onSubmit: (wishInfo: WithInfo) => void }> = ({
 }) => {
   const { account } = useMoralis();
   const { metaDataList = [], loading } = useOwnedSeeds(account as string);
+  const uniqDataList = uniqBy(metaDataList, (item) => item.properties.seed);
 
   return (
     <Spin spinning={loading}>
@@ -38,24 +38,22 @@ export const WishForm: React.FC<{ onSubmit: (wishInfo: WithInfo) => void }> = ({
           <Form.Item name="seed" label="Seed">
             {metaDataList.length ? (
               <Radio.Group>
-                {uniqBy(metaDataList, (item) => item.properties.seed).map(
-                  (item) => {
-                    const seed = item.properties.seed;
-                    return (
-                      <Radio key={seed} value={seed}>
-                        <Space direction="vertical" align="center">
-                          <Img
-                            height={100}
-                            width={100}
-                            key={seed}
-                            src={ipfsToHttp(item.image)}
-                            alt={`seed img ${seed}`}
-                          />
-                        </Space>
-                      </Radio>
-                    );
-                  }
-                )}
+                {uniqDataList.map((item) => {
+                  const seed = item.properties.seed;
+                  return (
+                    <Radio key={seed} value={seed}>
+                      <Space direction="vertical" align="center">
+                        <Img
+                          height={100}
+                          width={100}
+                          key={seed}
+                          src={ipfsToHttp(item.image)}
+                          alt={`seed img ${seed}`}
+                        />
+                      </Space>
+                    </Radio>
+                  );
+                })}
               </Radio.Group>
             ) : (
               <Empty></Empty>
@@ -64,10 +62,8 @@ export const WishForm: React.FC<{ onSubmit: (wishInfo: WithInfo) => void }> = ({
           <Form.Item name="features" label="Features" initialValue={["flower"]}>
             <Checkbox.Group
               className="flex-wrap"
-              options={uniq(
-                DEFAULT_PROMPT.concat(
-                  metaDataList.map((item) => mapPrompt(item.properties.seed))
-                )
+              options={DEFAULT_PROMPT.concat(
+                uniqDataList.map((item) => mapPrompt(item.properties.seed))
               )}
             />
           </Form.Item>

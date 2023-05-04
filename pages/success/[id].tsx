@@ -6,7 +6,6 @@ import { Button, Alert, Tag, Space } from "antd";
 import { useRequest } from "ahooks";
 import { ipfsToHttp } from "@/utils";
 import { MetaData } from "@/typings";
-import { useState } from "react";
 import { mapPrompt } from "@/components";
 import { Img } from "@/components/Img";
 
@@ -14,7 +13,6 @@ const CHAIN_SCAN_BASE = "https://polygonscan.com/tx";
 
 const Success: NextPageWithLayout = observer(() => {
   const { query, back } = useRouter();
-  const [imgLoaded, setImgLoaded] = useState(false);
   const { data: metaData } = useRequest(
     () => {
       const url = ipfsToHttp(query["uri"] as string);
